@@ -108,7 +108,7 @@ $(document).ready(function(){
     $.fn.calculateChange = function () {
         var change = $("#payablePrice").val() - $("#payment").val();
         if(change <= 0){
-            $("#change").text(change.toFixed(2));
+            $("#change").text(change.toLocaleString());
         }else{
             $("#change").text('0')
         }

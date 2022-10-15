@@ -15,8 +15,9 @@
     "async": "^2.6.0",
     "body-parser": "^1.18.2",
     "btoa": "^1.2.1",
-    "electron": ">=13.6.6",
+    "electron": "^6.1.12",
     "electron-context-menu": "^0.15.1",
+    "electron-packager": "^16.0.0",
     "electron-store": "^5.1.0",
     "electron-winstaller": "^4.0.0",
     "express": "^4.16.2",
@@ -32,7 +33,6 @@
     "moment": "^2.24.0",
     "multer": "^1.4.2",
     "nedb": "^1.8.0",
-    "nodemon": "^1.14.12",
     "path": "^0.12.7",
     "print-js": "^1.0.63",
     "socket.io": "^2.4.0",
@@ -58,8 +58,8 @@
   },
   "devDependencies": {
     "cross-env": "^6.0.3",
-    "electron-builder": "^21.2.0",
+    "electron-builder": "^23.6.0",
     "electron-is-dev": "^1.1.0",
-    "nodemon": "^1.19.3"
+    "nodemon": "^2.0.20"
   }
 }
