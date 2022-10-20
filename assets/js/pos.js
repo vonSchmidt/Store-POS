@@ -91,6 +91,9 @@ $(function () {
 
 });
 
+function isNumeric(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n)
+}
 
 $.fn.serializeObject = function () {
     var o = {};
@@ -202,7 +205,7 @@ if (auth == undefined) {
             $.get(api + 'inventory/products', function (data) {
 
                 data.forEach(item => {
-                    item.price = parseFloat(item.price).toLocaleString();
+                    item.price = parseFloat(item.price.replace(/,/g, '')).toLocaleString();
                 });
 
                 allProducts = [...data];
@@ -219,7 +222,7 @@ if (auth == undefined) {
                     }
 
                     let item_info = `<div class="col-lg-2 box ${item.category}"
-                                onclick="$(this).addToCart(${item._id}, ${item.quantity}, ${item.stock})">
+                                onclick="$(this).addToCart(${item._id}, ${item.quantity}, ${item.stock}, ${item.price})">
                             <div class="widget-panel widget-style-2 ">                    
                             <div id="image"><img src="${item.img == "" ? "./assets/images/default.jpg" : img_path + item.img}" id="product_img" alt=""></div>                    
                                         <div class="text-muted m-t-5 text-center">
@@ -276,8 +279,16 @@ if (auth == undefined) {
         }
 
 
-        $.fn.addToCart = function (id, count, stock) {
-
+        $.fn.addToCart = function (id, count, stock, price) {
+                console.log(id);
+            if (!isNumeric(price)) {
+                Swal.fire(
+                        'Price unavailable!',
+                        "This item's price is not defined",
+                        'error'
+                    );
+                return;
+            }
             if (stock == 1) {
                 if (count > 0) {
                     $.get(api + 'inventory/product/' + id, function (data) {
@@ -635,7 +646,7 @@ if (auth == undefined) {
 
             cart.forEach(item => {
 
-                items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + settings.symbol + parseFloat(item.price).toLocaleString() + "</td></tr>";
+                items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + settings.symbol + parseFloat(item.price.replace(/,/g, '')).toLocaleString() + "</td></tr>";
 
             });
 
@@ -643,8 +654,8 @@ if (auth == undefined) {
 
             let discount = $("#inputDiscount").val();
             let customer = JSON.parse($("#customer").val());
-            let date = moment(currentTime).format("YYYY-MM-DD HH:mm:ss");
-            let paid = $("#payment").val() == "" ? "" : parseFloat($("#payment").val()).toLocaleString();
+            let date = moment(currentTime).format("YYYY-MM-DD HH:mm:ss A");
+            let paid = $("#payment").val() == "" ? "" : parseFloat($("#payment").val().replace(/,/g, '')).toLocaleString();
             let change = $("#change").text() == "" ? "" : Math.abs(parseFloat($("#change").text().replace(/,/g, ''))).toLocaleString();
             let refNumber = $("#refNumber").val();
             let orderNumber = holdOrder;
@@ -669,12 +680,12 @@ if (auth == undefined) {
                 payment = `<tr>
                         <td>Paid</td>
                         <td>:</td>
-                        <td>${settings.symbol + paid}</td>
+                        <td>${settings.symbol + parseFloat(paid.replace(/,/g, '')).toLocaleString()}</td>
                     </tr>
                     <tr>
                         <td>Change</td>
                         <td>:</td>
-                        <td>${settings.symbol + change}</td>
+                        <td>${settings.symbol + parseFloat(change.replace(/,/g, '')).toLocaleString()}</td>
                     </tr>
                     <tr>
                         <td>Method</td>
@@ -689,7 +700,7 @@ if (auth == undefined) {
                 tax_row = `<tr>
                     <td>Vat(${settings.percentage})% </td>
                     <td>:</td>
-                    <td>${settings.symbol}${parseFloat(totalVat).toLocaleString()}</td>
+                    <td>${settings.symbol}${totalVat.toLocaleString()}</td>
                 </tr>`;
             }
 
@@ -763,7 +774,7 @@ if (auth == undefined) {
             <tr>
                 <td>Discount</td>
                 <td>:</td>
-                <td>${discount > 0 ? settings.symbol + parseFloat(discount).toLocaleString() : ''}</td>
+                <td>${discount > 0 ? settings.symbol + parseFloat(discount.replace(/,/g, '')).toLocaleString() : ''}</td>
             </tr>
             
             ${tax_row}
@@ -810,7 +821,7 @@ if (auth == undefined) {
                 discount: discount,
                 customer: customer,
                 status: status,
-                subtotal: parseFloat(subTotal).toLocaleString(),
+                subtotal: subTotal.toLocaleString(),
                 tax: totalVat,
                 order_type: 1,
                 items: cart,
@@ -1952,7 +1963,7 @@ function loadTransactions() {
 
             transactions.forEach((trans, index) => {
 
-                sales += parseFloat(trans.total);
+                sales += parseFloat(trans.total.replace(/,/g, ''));
                 transact++;
 
 
@@ -1973,10 +1984,10 @@ function loadTransactions() {
                 counter++;
                 transaction_list += `<tr>
                                 <td>${trans.order}</td>
-                                <td class="nobr">${moment(trans.date).format('YYYY MMM DD hh:mm:ss')}</td>
-                                <td>${settings.symbol + parseFloat(trans.total).toLocaleString()}</td>
-                                <td>${trans.paid == "" ? "" : settings.symbol + parseFloat(trans.paid).toLocaleString()}</td>
-                                <td>${trans.change ? settings.symbol + Math.abs(trans.change).toLocaleString() : ''}</td>
+                                <td class="nobr">${moment(trans.date).format('YYYY MMM DD HH:mm:ss')}</td>
+                                <td>${settings.symbol + parseFloat(trans.total.replace(/,/g, '')).toLocaleString()}</td>
+                                <td>${trans.paid == "" ? "" : settings.symbol + parseFloat(trans.paid.replace(/,/g, '')).toLocaleString()}</td>
+                                <td>${trans.change ? settings.symbol + Math.abs(parseFloat(trans.change.replace(/,/g, ''))).toLocaleString() : ''}</td>
                                 <td>${trans.payment_type}</td>
                                 <td>${trans.user}</td>
                                 <td>${trans.paid == "" ? '<button class="btn btn-dark"><i class="fa fa-search-plus"></i></button>' : '<button onClick="$(this).viewTransaction(' + index + ')" class="btn btn-info"><i class="fa fa-search-plus"></i></button></td>'}</tr>
@@ -1984,7 +1995,7 @@ function loadTransactions() {
 
                 if (counter == transactions.length) {
 
-                    $('#total_sales #counter').text(settings.symbol + parseFloat(sales).toLocaleString());
+                    $('#total_sales #counter').text(settings.symbol + sales.toLocaleString());
                     $('#total_transactions #counter').text(transact);
 
                     const result = {};
@@ -2026,15 +2037,15 @@ function loadTransactions() {
 
                     $('#transaction_list').html(transaction_list);
                     $('#transactionList').DataTable({
-                        "order": [[1, "desc"]]
-                        , "autoWidth": false
-                        , "info": true
-                        , "JQueryUI": true
-                        , "ordering": true
-                        , "paging": true,
+                        "order": [[1, "desc"]],
+                        "autoWidth": false,
+                        "info": true,
+                        "JQueryUI": true,
+                        "ordering": true,
                         "dom": 'Bfrtip',
-                        "buttons": ['csv', 'excel', 'pdf',]
-
+                        "buttons": ['csv', 'excel', 'pdf',],
+                        "scrollY": "250px",
+                        "scrollCollapse": true,
                     });
                 }
             });
@@ -2087,7 +2098,7 @@ function loadSoldProducts() {
             <td>${item.product}</td>
             <td>${item.qty}</td>
             <td>${product[0].stock == 1 ? product.length > 0 ? product[0].quantity : '' : 'N/A'}</td>
-            <td>${settings.symbol + (item.qty * parseFloat(item.price)).toLocaleString()}</td>
+            <td>${settings.symbol + (item.qty * parseFloat(item.price.replace(/,/g, ''))).toLocaleString()}</td>
             </tr>`;
 
         if (counter == sold.length) {
@@ -2140,7 +2151,7 @@ $.fn.viewTransaction = function (index) {
     let products = allTransactions[index].items;
 
     products.forEach(item => {
-        items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + settings.symbol + parseFloat(item.price).toLocaleString() + "</td></tr>";
+        items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + settings.symbol + parseFloat(item.price.replace(/,/g, '')).toLocaleString() + "</td></tr>";
 
     });
 
@@ -2164,7 +2175,7 @@ $.fn.viewTransaction = function (index) {
                 <tr>
                     <td>Change</td>
                     <td>:</td>
-                    <td>${settings.symbol + Math.abs(allTransactions[index].change).toLocaleString()}</td>
+                    <td>${settings.symbol + Math.abs(parseFloat(allTransactions[index].change.replace(/,/g, ''))).toLocaleString()}</td>
                 </tr>
                 <tr>
                     <td>Method</td>
@@ -2220,12 +2231,12 @@ $.fn.viewTransaction = function (index) {
         <tr>                        
             <td><b>Subtotal</b></td>
             <td>:</td>
-            <td><b>${settings.symbol}${allTransactions[index].subtotal}</b></td>
+            <td><b>${settings.symbol}${parseFloat(allTransactions[index].subtotal.replace(/,/g, '')).toLocaleString()}</b></td>
         </tr>
         <tr>
             <td>Discount</td>
             <td>:</td>
-            <td>${discount > 0 ? settings.symbol + parseFloat(allTransactions[index].discount).toLocaleString() : ''}</td>
+            <td>${discount > 0 ? settings.symbol + parseFloat(allTransactions[index].discount.replace(/,/g, '')).toLocaleString() : ''}</td>
         </tr>
         
         ${tax_row}
@@ -2234,7 +2245,7 @@ $.fn.viewTransaction = function (index) {
             <td><h3>Total</h3></td>
             <td><h3>:</h3></td>
             <td>
-                <h3>${settings.symbol}${allTransactions[index].total}</h3>
+                <h3>${settings.symbol}${parseFloat(allTransactions[index].total.replace(/,/g, '')).toLocaleString()}</h3>
             </td>
         </tr>
         ${payment == 0 ? '' : payment}

@@ -102,13 +102,11 @@ String.prototype.replaceAll = function(search, replacement) {
 
 app.post("/new", function(req, res) {
   let newTransaction = req.body;
-  console.log(newTransaction);
   req.body.subtotal = req.body.subtotal.replaceAll(',', '');
   req.body.change = req.body.change.replaceAll(',', '');
   req.body.total = req.body.total.replaceAll(',', '');
   req.body.paid = req.body.paid.replaceAll(',', '');
-  console.log(req.body);
-  transactionsDB.insert(newTransaction, function(err, transaction) {    
+  transactionsDB.insert(newTransaction, function(err, transaction) {
     if (err) res.status(500).send(err);
     else {
      res.sendStatus(200);

@@ -13,6 +13,11 @@
     <link href="assets/plugins/dataTables/jquery.dataTables.min.css" rel="stylesheet" type="text/css"/>
     <link href="assets/plugins/dataTables/dataTables.bootstrap.min.css" rel="stylesheet" type="text/css"/>
     <link href="assets/css/pages.css" rel="stylesheet" type="text/css"/>
+    <style>
+        body {
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body>
 
@@ -112,10 +117,11 @@
         </div>
         <br>
 
+
         <div id="transactions_view">
             <div class="row">
                 <div class="col-md-12">
-                    <div class="card-box">
+                    <div class="card-box" style="" id="transactions_cardbox">
                         <div class="row">
                             <h3 class="col-md-2">Transactions</h3>
                             <div class="col-md-1">
@@ -138,85 +144,77 @@
                             <div class="col-md-3">
                                 <span style="width: 100%;">Date</span>
                                 <div id="reportrange">
-                                    <i class="fa fa-calendar"></i>&nbsp;
-                                    <span></span> <i class="fa fa-caret-down"></i>
+                                    <i class="fa fa-calendar"></i>&nbsp; <span></span> <i class="fa fa-caret-down"></i>
                                 </div>
                             </div>
                         </div>
                         <hr>
                         <div class="row">
-
-
-                            <div class="col-md-5">
-                                <div class="row">
-                                    <div class="col-md-8" id="productSales">
-                                        <h4>Products</h4>
-                                        <hr>
-                                        <table class="table tablesaw-enhanced" id="productsSold">
-                                            <thead>
-                                            <tr>
-                                                <th>Name</th>
-                                                <th>Sold</th>
-                                                <th>Available</th>
-                                                <th>Sales</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody id="product_sales"></tbody>
-                                        </table>
-                                    </div>
-                                    <div class="col-md-4" id="totals">
-                                        <h4>Total</h4>
-                                        <hr>
-
-                                        <div id="total_sales" class="btn-success">
-                                            <h5>SALES</h5>
-                                            <div id="counter">0</div>
-                                        </div>
-
-                                        <div id="total_transactions" class="btn-warning">
-                                            <h5>TRANSACTIONS</h5>
-                                            <div id="counter">0</div>
-                                        </div>
-
-                                        <div id="total_items" class="btn-info">
-                                            <h5>ITEMS</h5>
-                                            <div id="counter">0</div>
-                                        </div>
-
-                                        <div id="total_products" class="btn-default">
-                                            <h5>PRODUCTS</h5>
-                                            <div id="counter">0</div>
-                                        </div>
-
-                                    </div>
-
-                                </div>
-                            </div>
-
-                            <div class="col-md-7">
-                                <table class="table tablesaw-enhanced" id="transactionList">
+                            <div class="col-md-4" id="productSales">
+                                <h4>Products</h4>
+                                <hr style="">
+                                <table class="table tablesaw-enhanced" id="productsSold">
                                     <thead>
                                     <tr>
-                                        <th>Invoice</th>
-                                        <th>Date</th>
-                                        <th>Total</th>
-                                        <th>Paid</th>
-                                        <th>Change</th>
-                                        <th>Method</th>
-                                        <th>Cashier</th>
-                                        <th>View</th>
+                                        <th>Name</th>
+                                        <th>Sold</th>
+                                        <th>Available</th>
+                                        <th>Sales</th>
                                     </tr>
                                     </thead>
-                                    <tbody id="transaction_list"></tbody>
+                                    <tbody id="product_sales"></tbody>
                                 </table>
                             </div>
-
+                            <div class="col-md-8" id="right_panel_transactions">
+                                <div class="row">
+                                    <div class="col-md-12" style="">
+                                        <h4>History<br></h4>
+                                        <hr>
+                                        <table class="table tablesaw-enhanced" id="transactionList" style="">
+                                        <thead>
+                                        <tr>
+                                            <th>Invoice</th>
+                                            <th>Date</th>
+                                            <th>Total</th>
+                                            <th>Paid</th>
+                                            <th>Change</th>
+                                            <th>Method</th>
+                                            <th>Cashier</th>
+                                            <th>View</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody style="overflow-y: scroll" id="transaction_list"></tbody>
+                                    </table>
+                                    </div>
+                                    <div class="col-md-12" id="totals">
+                                        <h4>Summary</h4>
+                                        <hr>
+                                        <div class="row">
+                                            <div id="total_sales" class="col-md-3 btn-success">
+                                                <h5>SALES</h5>
+                                                <div id="counter">0</div>
+                                            </div>
+                                            <div id="total_transactions" class="col-md-3 btn-warning">
+                                                <h5>TRANSACTIONS</h5>
+                                                <div id="counter">0</div>
+                                            </div>
+                                            <div id="total_items" class="col-md-3 btn-info">
+                                                <h5>ITEMS</h5>
+                                                <div id="counter">0</div>
+                                            </div>
+                                            <div id="total_products" class="col-md-3 btn-default">
+                                                <h5>PRODUCTS</h5>
+                                                <div id="counter">0</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
 
         <div id="pos_view">
             <div class="row">
@@ -695,7 +693,7 @@
         </div>
 
 
-        <div id="Products" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog"
+        <div id="Products" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog"
              aria-labelledby="mySmallModalLabel" aria-hidden="true" style="display: none;">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -707,7 +705,7 @@
                             <button class="btn btn-white pull-right" id="print_list">Download</button>
                         </h4>
                     </div>
-                    <div class="modal-body" id="all_products" style="padding: 20px; padding-right: 40px;">
+                    <div class="modal-body" id="all_products" style="padding: -20px; padding-right: 0;">
                         <table class="table table-bordered" id="productList">
                             <thead>
                             <tr>
@@ -1070,6 +1068,8 @@
 require('./renderer.js');
 
 
+
+
 </script>
 
 <script src="assets/plugins/bootstrap/bootstrap.min.js"></script>
@@ -1106,6 +1106,8 @@ require('./renderer.js');
     //   $('.customerOrderKeyboard').onscreenKeyboard({
 	//     allowTypingClass: 'holdCustomerOrderInput'
     //   });
+
+
 
 
 </script>
