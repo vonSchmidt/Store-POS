@@ -213,7 +213,7 @@ if (auth == undefined) {
                 loadProductList();
 
                 $('#parent').text('');
-                $('#categories').html(`<button type="button" id="all" class="btn btn-categories btn-white waves-effect waves-light">All</button> `);
+                $('#categories').html(`<button type="button" id="all" class="smallsize btn btn-categories btn-white waves-effect waves-light">All</button> `);
 
                 data.forEach(item => {
 
@@ -222,7 +222,7 @@ if (auth == undefined) {
                     }
 
                     let item_info = `<div class="col-lg-2 box ${item.category}"
-                                onclick="$(this).addToCart(${item._id}, ${item.quantity}, ${item.stock}, ${item.price})">
+                                onclick="$(this).addToCart(${item._id}, ${item.quantity}, ${item.stock}, ${item.price.replace(',', '')})">
                             <div class="widget-panel widget-style-2 ">                    
                             <div id="image"><img src="${item.img == "" ? "./assets/images/default.jpg" : img_path + item.img}" id="product_img" alt=""></div>                    
                                         <div class="text-muted m-t-5 text-center">
@@ -241,7 +241,7 @@ if (auth == undefined) {
                         return ctg._id == category;
                     })
 
-                    $('#categories').append(`<button type="button" id="${category}" class="btn btn-categories btn-white waves-effect waves-light">${c.length > 0 ? c[0].name : ''}</button> `);
+                    $('#categories').append(`<button type="button" id="${category}" class="smallsize btn btn-categories btn-white waves-effect waves-light">${c.length > 0 ? c[0].name : ''}</button> `);
                 });
 
             });
@@ -447,7 +447,7 @@ if (auth == undefined) {
                 total += data.quantity * data.price;
             });
             total = total - $("#inputDiscount").val();
-            $('#price').text(settings.symbol + total.toFixed(2));
+            $('#price').text(settings.symbol + total.toLocaleString());
 
             subTotal = total;
 
@@ -466,7 +466,7 @@ if (auth == undefined) {
 
             orderTotal = grossTotal.toLocaleString();
 
-            $("#gross_price").text(settings.symbol + grossTotal.toFixed(2));
+            $("#gross_price").text(settings.symbol + grossTotal.toLocaleString());
             $("#payablePrice").val(grossTotal);
         };
 
@@ -485,7 +485,8 @@ if (auth == undefined) {
                                 $('<div>', { class: 'input-group-btn btn-xs' }).append(
                                     $('<button>', {
                                         class: 'btn btn-default btn-xs',
-                                        onclick: '$(this).qtDecrement(' + index + ')'
+                                        onclick: '$(this).qtDecrement(' + index + ')',
+                                        style: 'padding: 0.2vw'
                                     }).append(
                                         $('<i>', { class: 'fa fa-minus' })
                                     )
@@ -494,12 +495,14 @@ if (auth == undefined) {
                                     class: 'form-control',
                                     type: 'number',
                                     value: data.quantity,
-                                    onInput: '$(this).qtInput(' + index + ')'
+                                    onInput: '$(this).qtInput(' + index + ')',
+                                    style: 'height: 2vw; width: 2vw; padding: 0; text-align: center'
                                 }),
                                 $('<div>', { class: 'input-group-btn btn-xs' }).append(
                                     $('<button>', {
                                         class: 'btn btn-default btn-xs',
-                                        onclick: '$(this).qtIncrement(' + index + ')'
+                                        onclick: '$(this).qtIncrement(' + index + ')',
+                                        style: 'padding: 0.2vw'
                                     }).append(
                                         $('<i>', { class: 'fa fa-plus' })
                                     )

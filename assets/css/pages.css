@@ -3,9 +3,9 @@
   display: none;
 }
 
-#card-box tr {display: block; }
+#card-box tr {display: block;}
 #card-box th, #card-box td:first-child{ width: 10px; }
-#card-box th, #card-box td:nth-child(2){ width: 150px; }
+#card-box th, #card-box td:nth-child(2){width: 150px;}
 
 #cartTable tbody { 
   display: block; 
@@ -15,7 +15,7 @@
 
 #parent {
   display: block;
-  height: calc(100vh - 235px);
+  height: calc(100vh - 285px);
   overflow: auto;
   overflow: auto;
 }
@@ -84,6 +84,19 @@ margin-right: 30px;
 
 .receipt {
   font-family: 'Share Tech', sans-serif;
+}
+
+.smallsize {
+    padding: 5px;
+    font-size: smaller;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  margin: 0;
 }
 
 .print-btn{
