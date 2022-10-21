@@ -65,6 +65,7 @@ app.post( "/login", function ( req, res ) {
 
 }, function ( err, docs ) {
         if(docs) {
+            console.log(docs._id);
             usersDB.update( {
                 _id: docs._id
             }, {
@@ -72,8 +73,8 @@ app.post( "/login", function ( req, res ) {
                     status: 'Logged In_'+ new Date()
                 }
             }, {},
-            
         );
+        usersDB.persistence.compactDatafile();
         }
         res.send( docs );
     } );
