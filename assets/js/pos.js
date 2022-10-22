@@ -649,7 +649,7 @@ if (auth == undefined) {
 
             cart.forEach(item => {
 
-                items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + settings.symbol + parseFloat(item.price.replace(/,/g, '')).toLocaleString() + "</td></tr>";
+                items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + settings.symbol + (parseFloat(item.price.replace(/,/g, '')) * item.quantity).toLocaleString() + "</td></tr>";
 
             });
 
@@ -2154,7 +2154,7 @@ $.fn.viewTransaction = function (index) {
     let products = allTransactions[index].items;
 
     products.forEach(item => {
-        items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + settings.symbol + parseFloat(item.price.replace(/,/g, '')).toLocaleString() + "</td></tr>";
+        items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + settings.symbol + (parseFloat(item.price.replace(/,/g, '')) * item.quantity).toLocaleString() + "</td></tr>";
 
     });
 
