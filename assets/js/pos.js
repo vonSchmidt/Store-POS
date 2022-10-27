@@ -595,10 +595,12 @@ if (auth == undefined) {
                         cart = [];
                         $(this).renderTable(cart);
                         holdOrder = 0;
+                        $("#refNumber").val('');
+                        $("#customer").val('0');
 
                         Swal.fire(
                             'Cleared!',
-                            'All items have been removed.',
+                            'All items have been removed. You are creating a new order now.',
                             'success'
                         )
                     }
@@ -649,7 +651,7 @@ if (auth == undefined) {
 
             cart.forEach(item => {
 
-                items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + settings.symbol + (parseFloat(item.price.replace(/,/g, '')) * item.quantity).toLocaleString() + "</td></tr>";
+                items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + "<span style='font-size: x-small'>" + settings.symbol + "</span>" + (parseFloat(item.price.replace(/,/g, '')) * item.quantity).toLocaleString() + "</td></tr>";
 
             });
 
@@ -683,12 +685,12 @@ if (auth == undefined) {
                 payment = `<tr>
                         <td>Paid</td>
                         <td>:</td>
-                        <td>${settings.symbol + parseFloat(paid.replace(/,/g, '')).toLocaleString()}</td>
+                        <td><span style='font-size: x-small'>${settings.symbol}</span>${parseFloat(paid.replace(/,/g, '')).toLocaleString()}</td>
                     </tr>
                     <tr>
                         <td>Change</td>
                         <td>:</td>
-                        <td>${settings.symbol + parseFloat(change.replace(/,/g, '')).toLocaleString()}</td>
+                        <td><span style='font-size: x-small'>${settings.symbol}</span>${parseFloat(change.replace(/,/g, '')).toLocaleString()}</td>
                     </tr>
                     <tr>
                         <td>Method</td>
@@ -703,7 +705,7 @@ if (auth == undefined) {
                 tax_row = `<tr>
                     <td>Vat(${settings.percentage})% </td>
                     <td>:</td>
-                    <td>${settings.symbol}${totalVat.toLocaleString()}</td>
+                    <td><span style='font-size: x-small'>${settings.symbol}</span>${totalVat.toLocaleString()}</td>
                 </tr>`;
             }
 
@@ -761,7 +763,7 @@ if (auth == undefined) {
         <table width="100%">
             <thead style="text-align: left;">
             <tr>
-                <th>Item</th>
+                <th width='45%'>Item</th>
                 <th>Qty</th>
                 <th>Price</th>
             </tr>
@@ -772,12 +774,12 @@ if (auth == undefined) {
             <tr>                        
                 <td><b>Subtotal</b></td>
                 <td>:</td>
-                <td><b>${settings.symbol}${subTotal.toLocaleString()}</b></td>
+                <td><b><span style='font-size: x-small'>${settings.symbol}</span>${subTotal.toLocaleString()}</b></td>
             </tr>
             <tr>
                 <td>Discount</td>
                 <td>:</td>
-                <td>${discount > 0 ? settings.symbol + parseFloat(discount.replace(/,/g, '')).toLocaleString() : ''}</td>
+                <td><span style='font-size: x-small'>${settings.symbol}</span>${discount > 0? parseFloat(discount.replace(/,/g, '')).toLocaleString() : "---"}</td>
             </tr>
             
             ${tax_row}
@@ -786,7 +788,7 @@ if (auth == undefined) {
                 <td><h3>Total</h3></td>
                 <td><h3>:</h3></td>
                 <td>
-                    <h3>${settings.symbol}${parseFloat(orderTotal.replace(/,/g, '')).toLocaleString()}</h3>
+                    <h3><span style='font-size: x-small'>${settings.symbol}</span>${parseFloat(orderTotal.replace(/,/g, '')).toLocaleString()}</h3>
                 </td>
             </tr>
             ${payment == 0 ? '' : payment}
@@ -804,7 +806,7 @@ if (auth == undefined) {
             if (status == 3) {
                 if (cart.length > 0) {
 
-                    printJS({ printable: receipt, type: 'raw-html' });
+                    printJS({ printable: receipt, type: 'raw-html', style: ['@page { size: 58mm 29.7cm; margin: 3mm;} body {margin: 0;} h4 {margin:0}'],  targetStyles: ['*']});
 
                     $(".loading").hide();
                     return;
@@ -905,16 +907,16 @@ if (auth == undefined) {
                         $('<a>').append(
                             $('<div>', { class: 'card-box order-box' }).append(
                                 $('<p>').append(
-                                    $('<b>', { text: 'Ref :' }),
+                                    $('<b>', { text: 'Ref: ' }),
                                     $('<span>', { text: order.ref_number, class: 'ref_number' }),
                                     $('<br>'),
-                                    $('<b>', { text: 'Price :' }),
-                                    $('<span>', { text: order.total, class: "label label-info", style: 'font-size:14px;' }),
+                                    $('<b>', { text: 'Price: ' }),
+                                    $('<span>', { text: parseFloat(order.total.replace(',','')).toLocaleString(), class: "label label-info", style: 'font-size:14px;' }),
                                     $('<br>'),
-                                    $('<b>', { text: 'Items :' }),
+                                    $('<b>', { text: 'Items: ' }),
                                     $('<span>', { text: order.items.length }),
                                     $('<br>'),
-                                    $('<b>', { text: 'Customer :' }),
+                                    $('<b>', { text: 'Customer: ' }),
                                     $('<span>', { text: order.customer != 0 ? order.customer.name : 'Walk in customer', class: 'customer_name' })
                                 ),
                                 $('<button>', { class: 'btn btn-danger del', onclick: '$(this).deleteOrder(' + index + ',' + orderType + ')' }).append(
@@ -954,10 +956,19 @@ if (auth == undefined) {
                 $('#refNumber').val(holdOrderList[index].ref_number);
 
                 $("#customer option:selected").removeAttr('selected');
+                let reselected = false;
+                $("#customer option").map(function() {
+                    if ($(this).text() === holdOrderList[index].customer.name) {
+                        $(this).prop('selected', true);
+                        reselected = true;
+                    }
+                });
 
-                $("#customer option").filter(function () {
-                    return $(this).text() == "Walk in customer";
-                }).prop("selected", true);
+                if (!reselected) {
+                    $("#customer option").filter(function () {
+                        return $(this).text() == "Walk in customer";
+                    }).prop("selected", true);
+                }
 
                 holdOrder = holdOrderList[index]._id;
                 cart = [];
@@ -1088,10 +1099,10 @@ if (auth == undefined) {
                     Swal.fire("Customer added!", "Customer added successfully!", "success");
                     $("#customer option:selected").removeAttr('selected');
                     $('#customer').append(
-                        $('<option>', { text: custData.name, value: `{"id": ${custData._id}, "name": ${custData.name}}`, selected: 'selected' })
+                        $('<option>', { text: custData.name, value: `{"id": ${custData._id}, "name": "${custData.name}"}`, selected: 'selected' })
                     );
 
-                    $('#customer').val(`{"id": ${custData._id}, "name": ${custData.name}}`).trigger('chosen:updated');
+                    $('#customer').val(`{"id": ${custData._id}, "name": "${custData.name}}"`).trigger('chosen:updated');
 
                 }, error: function (data) {
                     $("#newCustomer").modal('hide');
@@ -1933,7 +1944,7 @@ if (auth == undefined) {
 
 $.fn.print = function () {
 
-    printJS({ printable: receipt, type: 'raw-html' });
+    printJS({ printable: receipt, type: 'raw-html', style: ['@page { size: 58mm 29.7cm; margin: 3mm;} body {margin: 0;} h4 {margin:0}'],  targetStyles: ['*']});
 
 }
 
@@ -2154,7 +2165,7 @@ $.fn.viewTransaction = function (index) {
     let products = allTransactions[index].items;
 
     products.forEach(item => {
-        items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + settings.symbol + (parseFloat(item.price.replace(/,/g, '')) * item.quantity).toLocaleString() + "</td></tr>";
+        items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + "<span style='font-size: x-small'>" + settings.symbol + "</span>" + (parseFloat(item.price.replace(/,/g, '')) * item.quantity).toLocaleString() + "</td></tr>";
 
     });
 
@@ -2173,12 +2184,12 @@ $.fn.viewTransaction = function (index) {
         payment = `<tr>
                     <td>Paid</td>
                     <td>:</td>
-                    <td>${settings.symbol + allTransactions[index].paid}</td>
+                    <td><span style='font-size: x-small'>${settings.symbol}</span>${allTransactions[index].paid}</td>
                 </tr>
                 <tr>
                     <td>Change</td>
                     <td>:</td>
-                    <td>${settings.symbol + Math.abs(parseFloat(allTransactions[index].change.replace(/,/g, ''))).toLocaleString()}</td>
+                    <td><span style='font-size: x-small'>${settings.symbol}</span>${Math.abs(parseFloat(allTransactions[index].change.replace(/,/g, ''))).toLocaleString()}</td>
                 </tr>
                 <tr>
                     <td>Method</td>
@@ -2193,7 +2204,7 @@ $.fn.viewTransaction = function (index) {
         tax_row = `<tr>
                 <td>Vat(${settings.percentage})% </td>
                 <td>:</td>
-                <td>${settings.symbol}${parseFloat(allTransactions[index].tax).toLocaleString()}</td>
+                <td><span style='font-size: x-small'>${settings.symbol}</span>${parseFloat(allTransactions[index].tax).toLocaleString()}</td>
             </tr>`;
     }
 
@@ -2223,7 +2234,7 @@ $.fn.viewTransaction = function (index) {
     <table width="100%">
         <thead style="text-align: left;">
         <tr>
-            <th>Item</th>
+            <th width='45%'>Item</th>
             <th>Qty</th>
             <th>Price</th>
         </tr>
@@ -2234,12 +2245,12 @@ $.fn.viewTransaction = function (index) {
         <tr>                        
             <td><b>Subtotal</b></td>
             <td>:</td>
-            <td><b>${settings.symbol}${parseFloat(allTransactions[index].subtotal.replace(/,/g, '')).toLocaleString()}</b></td>
+            <td><b><span style='font-size: x-small'>${settings.symbol}</span>${parseFloat(allTransactions[index].subtotal.replace(/,/g, '')).toLocaleString()}</b></td>
         </tr>
         <tr>
             <td>Discount</td>
             <td>:</td>
-            <td>${discount > 0 ? settings.symbol + parseFloat(allTransactions[index].discount.replace(/,/g, '')).toLocaleString() : ''}</td>
+            <td><span style='font-size: x-small'>${settings.symbol}</span>${discount > 0? parseFloat(allTransactions[index].discount.replace(/,/g, '')).toLocaleString() : "---"}</td>
         </tr>
         
         ${tax_row}
@@ -2248,7 +2259,7 @@ $.fn.viewTransaction = function (index) {
             <td><h3>Total</h3></td>
             <td><h3>:</h3></td>
             <td>
-                <h3>${settings.symbol}${parseFloat(allTransactions[index].total.replace(/,/g, '')).toLocaleString()}</h3>
+                <h3><span style='font-size: x-small'>${settings.symbol}</span>${parseFloat(allTransactions[index].total.replace(/,/g, '')).toLocaleString()}</h3>
             </td>
         </tr>
         ${payment == 0 ? '' : payment}

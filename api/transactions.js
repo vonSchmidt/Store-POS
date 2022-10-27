@@ -14,7 +14,7 @@ let transactionsDB = new Datastore({
 });
 
 
-transactionsDB.ensureIndex({ fieldName: '_id', unique: true });
+transactionsDB.ensureIndex({ fieldName: 'order', unique: true });
 
 app.get("/", function(req, res) {
   res.send("Transactions API");
@@ -117,6 +117,7 @@ app.post("/new", function(req, res) {
      
     }
   });
+  transactionsDB.persistence.compactDatafile();
 });
 
 
@@ -133,6 +134,7 @@ app.put("/new", function(req, res) {
       if ( err ) res.status( 500 ).send( err );
       else res.sendStatus( 200 );
   } );
+  transactionsDB.persistence.compactDatafile();
 });
 
 
@@ -144,6 +146,7 @@ app.post( "/delete", function ( req, res ) {
       if ( err ) res.status( 500 ).send( err );
       else res.sendStatus( 200 );
   } );
+  transactionsDB.persistence.compactDatafile();
 } );
 
 

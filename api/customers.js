@@ -49,6 +49,7 @@ app.post( "/customer", function ( req, res ) {
         if ( err ) res.status( 500 ).send( err );
         else res.sendStatus( 200 );
     } );
+    customerDB.persistence.compactDatafile();
 } );
 
 
@@ -78,6 +79,7 @@ app.put( "/customer", function ( req, res ) {
         if ( err ) res.status( 500 ).send( err );
         else res.sendStatus( 200 );
     } );
+    customerDB.persistence.compactDatafile();
 });
 
 

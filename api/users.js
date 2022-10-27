@@ -99,6 +99,7 @@ app.delete( "/user/:userId", function ( req, res ) {
         if ( err ) res.status( 500 ).send( err );
         else res.sendStatus( 200 );
     } );
+    usersDB.persistence.compactDatafile();
 } );
 
  
@@ -121,6 +122,7 @@ app.post( "/post" , function ( req, res ) {
             if ( err ) res.status( 500 ).send( req );
             else res.send( user );
         });
+        usersDB.persistence.compactDatafile();
     }
     else { 
         usersDB.update( {
@@ -144,7 +146,7 @@ app.post( "/post" , function ( req, res ) {
             if ( err ) res.status( 500 ).send( err );
             else res.sendStatus( 200 );
         } );
-
+        usersDB.persistence.compactDatafile();
     }
 
 });
@@ -169,6 +171,7 @@ app.get( "/check", function ( req, res ) {
               }
             usersDB.insert( User, function ( err, user ) {                            
             });
+            usersDB.persistence.compactDatafile();
         }
     } );
 } );

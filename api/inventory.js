@@ -103,6 +103,7 @@ app.post( "/product", upload.single('imagename'), function ( req, res ) {
             if ( err ) res.status( 500 ).send( err );
             else res.send( product );
         });
+        inventoryDB.persistence.compactDatafile();
     }
     else { 
         inventoryDB.update( {
@@ -115,6 +116,7 @@ app.post( "/product", upload.single('imagename'), function ( req, res ) {
             if ( err ) res.status( 500 ).send( err );
             else res.sendStatus( 200 );
         } );
+        inventoryDB.persistence.compactDatafile();
 
     }
 
@@ -130,6 +132,7 @@ app.delete( "/product/:productId", function ( req, res ) {
         if ( err ) res.status( 500 ).send( err );
         else res.sendStatus( 200 );
     } );
+    inventoryDB.persistence.compactDatafile();
 } );
 
  
@@ -172,6 +175,7 @@ app.decrementInventory = function ( products ) {
                     }, {},
                     callback
                 );
+                inventoryDB.persistence.compactDatafile();
             }
         } );
     } );

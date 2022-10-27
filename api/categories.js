@@ -37,6 +37,7 @@ app.post( "/category", function ( req, res ) {
         if ( err ) res.status( 500 ).send( err );
         else res.sendStatus( 200 );
     } );
+    categoryDB.persistence.compactDatafile();
 } );
 
 
@@ -48,6 +49,7 @@ app.delete( "/category/:categoryId", function ( req, res ) {
         if ( err ) res.status( 500 ).send( err );
         else res.sendStatus( 200 );
     } );
+    categoryDB.persistence.compactDatafile();
 } );
 
  
@@ -64,6 +66,7 @@ app.put( "/category", function ( req, res ) {
         if ( err ) res.status( 500 ).send( err );
         else res.sendStatus( 200 );
     } );
+    categoryDB.persistence.compactDatafile();
 });
 
 

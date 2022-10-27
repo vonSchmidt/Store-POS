@@ -21,9 +21,10 @@
 }
 
 
-.order-box{
-background-color: grey;
-color: #FFFFFF;
+.order-box {
+  background-color: grey;
+  color: #FFFFFF;
+  height: 180px;
 }
 
 #parent .box {
