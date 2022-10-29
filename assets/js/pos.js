@@ -738,10 +738,10 @@ if (auth == undefined) {
                 method = 'POST'
             }
 
-
-            receipt = `<div style="font-size: 10px;">                            
+			logo_print = settings.img.replace('.jpg', '') + '-bw.jpg';
+            receipt = `<div style="font-size: 14px;">
         <p style="text-align: center;">
-        ${settings.img == "" ? settings.img : '<img style="max-width: 50px;max-width: 100px;" src ="' + img_path + settings.img + '" /><br>'}
+        ${settings.img == "" ? settings.img : '<img style="max-width: 150px;" src ="' + img_path + logo_print + '" /><br>'}
             <span style="font-size: 22px;">${settings.store}</span> <br>
             ${settings.address_one} <br>
             ${settings.address_two} <br>
@@ -806,7 +806,7 @@ if (auth == undefined) {
             if (status == 3) {
                 if (cart.length > 0) {
 
-                    printJS({ printable: receipt, type: 'raw-html', style: ['@page { size: 58mm 29.7cm; margin: 3mm;} body {margin: 0;} h4 {margin:0}'],  targetStyles: ['*']});
+                    printJS({ printable: receipt, type: 'raw-html', style: ['@page { size: 58mm 29.7cm; margin: 0mm;} body {margin: 0;} h4 {margin:0}'],  targetStyles: ['*']});
 
                     $(".loading").hide();
                     return;
@@ -1944,7 +1944,7 @@ if (auth == undefined) {
 
 $.fn.print = function () {
 
-    printJS({ printable: receipt, type: 'raw-html', style: ['@page { size: 58mm 29.7cm; margin: 3mm;} body {margin: 0;} h4 {margin:0}'],  targetStyles: ['*']});
+    printJS({ printable: receipt, type: 'raw-html', style: ['@page { size: 58mm 29.7cm; margin: 0mm;} body {margin: 0;} h4 {margin:0}'],  targetStyles: ['*']});
 
 }
 
@@ -2209,10 +2209,10 @@ $.fn.viewTransaction = function (index) {
     }
 
 
-
-    receipt = `<div style="font-size: 10px;">                            
+	logo_print = settings.img.replace('.jpg', '') + '-bw.jpg';
+    receipt = `<div style="font-size: 14px;">                            
         <p style="text-align: center;">
-        ${settings.img == "" ? settings.img : '<img style="max-width: 50px;max-width: 100px;" src ="' + img_path + settings.img + '" /><br>'}
+        ${settings.img == "" ? settings.img : '<img style="max-width: 150px;" src ="' + img_path + logo_print + '" /><br>'}
             <span style="font-size: 22px;">${settings.store}</span> <br>
             ${settings.address_one} <br>
             ${settings.address_two} <br>
