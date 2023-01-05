@@ -877,7 +877,9 @@ if (auth == undefined) {
             $("#refNumber").val('');
             $("#change").text('');
             $("#payment").val('');
-
+            holdOrder = 0;
+            $("#refNumber").val('');
+            $("#customer").val('0');
         }
 
 
