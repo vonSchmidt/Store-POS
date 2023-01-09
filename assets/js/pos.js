@@ -61,6 +61,10 @@ let by_till = 0;
 let by_user = 0;
 let by_status = 1;
 
+compute_price = function(item_price) {
+    return Math.round(item_price * settings.rate /1000) * 1000;
+}
+
 $(function () {
 
     function cb(start, end) {
@@ -229,7 +233,7 @@ if (auth == undefined) {
                                         <div class="name" id="product_name">${item.name}</div> 
                                         <span class="sku">${item.sku}</span>
                                         <span class="stock">STOCK </span><span class="count">${item.stock == 1 ? item.quantity : 'N/A'}</span></div>
-                                        <sp class="text-success text-center"><b data-plugin="counterup">${settings.symbol + item.price}</b> </sp>
+                                        <sp class="text-success text-center"><b data-plugin="counterup">${settings.symbol + compute_price(item.price)}</b> </sp>
                             </div>
                         </div>`;
                     $('#parent').append(item_info);
@@ -447,7 +451,7 @@ if (auth == undefined) {
                 total += data.quantity * data.price;
             });
             total = total - $("#inputDiscount").val();
-            $('#price').text(settings.symbol + total.toLocaleString());
+            $('#price').text(settings.symbol + compute_price(total).toLocaleString());
 
             subTotal = total;
 
@@ -466,8 +470,8 @@ if (auth == undefined) {
 
             orderTotal = grossTotal.toLocaleString();
 
-            $("#gross_price").text(settings.symbol + grossTotal.toLocaleString());
-            $("#payablePrice").val(grossTotal);
+            $("#gross_price").text(settings.symbol + compute_price(grossTotal).toLocaleString());
+            $("#payablePrice").val(compute_price(grossTotal));
         };
 
 
@@ -509,7 +513,7 @@ if (auth == undefined) {
                                 )
                             )
                         ),
-                        $('<td>', { text: settings.symbol + (data.price * data.quantity).toLocaleString() }),
+                        $('<td>', { text: settings.symbol + compute_price(data.price * data.quantity).toLocaleString() }),
                         $('<td>').append(
                             $('<button>', {
                                 class: 'btn btn-danger btn-xs',
@@ -651,7 +655,7 @@ if (auth == undefined) {
 
             cart.forEach(item => {
 
-                items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + "<span style='font-size: x-small'>" + settings.symbol + "</span>" + (parseFloat(item.price.replace(/,/g, '')) * item.quantity).toLocaleString() + "</td></tr>";
+                items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + "<span style='font-size: x-small'>" + settings.symbol + "</span>" + compute_price(parseFloat(item.price.replace(/,/g, '')) * item.quantity).toLocaleString() + "</td></tr>";
 
             });
 
@@ -705,7 +709,7 @@ if (auth == undefined) {
                 tax_row = `<tr>
                     <td>Vat(${settings.percentage})% </td>
                     <td>:</td>
-                    <td><span style='font-size: x-small'>${settings.symbol}</span>${totalVat.toLocaleString()}</td>
+                    <td><span style='font-size: x-small'>${settings.symbol}</span>${compute_price(totalVat).toLocaleString()}</td>
                 </tr>`;
             }
 
@@ -774,12 +778,12 @@ if (auth == undefined) {
             <tr>                        
                 <td><b>Subtotal</b></td>
                 <td>:</td>
-                <td><b><span style='font-size: x-small'>${settings.symbol}</span>${subTotal.toLocaleString()}</b></td>
+                <td><b><span style='font-size: x-small'>${settings.symbol}</span>${compute_price(subTotal).toLocaleString()}</b></td>
             </tr>
             <tr>
                 <td>Discount</td>
                 <td>:</td>
-                <td><span style='font-size: x-small'>${settings.symbol}</span>${discount > 0? parseFloat(discount.replace(/,/g, '')).toLocaleString() : "---"}</td>
+                <td><span style='font-size: x-small'>${settings.symbol}</span>${discount > 0? compute_price(parseFloat(discount.replace(/,/g, ''))).toLocaleString() : "---"}</td>
             </tr>
             
             ${tax_row}
@@ -788,7 +792,7 @@ if (auth == undefined) {
                 <td><h3>Total</h3></td>
                 <td><h3>:</h3></td>
                 <td>
-                    <h3><span style='font-size: x-small'>${settings.symbol}</span>${parseFloat(orderTotal.replace(/,/g, '')).toLocaleString()}</h3>
+                    <h3><span style='font-size: x-small'>${settings.symbol}</span>${compute_price(parseFloat(orderTotal.replace(/,/g, ''))).toLocaleString()}</h3>
                 </td>
             </tr>
             ${payment == 0 ? '' : payment}
@@ -1268,6 +1272,7 @@ if (auth == undefined) {
 
             $('#productName').val(allProducts[index].name);
             $('#product_price').val(allProducts[index].price);
+            $('#display_price').val(compute_price(allProducts[index].price));
             $('#quantity').val(allProducts[index].quantity);
 
             $('#product_id').val(allProducts[index]._id);
@@ -1537,7 +1542,7 @@ if (auth == undefined) {
             <td><img id="`+ product._id + `"></td>
             <td><img style="max-height: 50px; max-width: 50px; border: 1px solid #ddd;" src="${product.img == "" ? "./assets/images/default.jpg" : img_path + product.img}" id="product_img"></td>
             <td>${product.name}</td>
-            <td>${settings.symbol}${product.price}</td>
+            <td>${settings.symbol}${compute_price(product.price)}</td>
             <td>${product.stock == 1 ? product.quantity : 'N/A'}</td>
             <td>${category.length > 0 ? category[0].name : ''}</td>
             <td class="nobr"><span class="btn-group"><button onClick="$(this).editProduct(${index})" class="btn btn-warning btn-sm"><i class="fa fa-edit"></i></button><button onClick="$(this).deleteProduct(${product._id})" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i></button></span></td></tr>`;
@@ -1665,28 +1670,27 @@ if (auth == undefined) {
                     'Please make sure the tax value is a number',
                     'warning'
                 );
+                return;
             }
-            else {
-                storage.set('settings', formData);
-
-                $(this).attr('action', api + 'settings/post');
-                $(this).attr('method', 'POST');
-
-
-                $(this).ajaxSubmit({
-                    contentType: 'application/json',
-                    success: function (response) {
-
-                        ipcRenderer.send('app-reload', '');
-
-                    }, error: function (data) {
-                        console.log(data);
-                    }
-
-                });
-
+            if (formData.rate != "" && !$.isNumeric(formData.rate)) {
+                Swal.fire(
+                    'Oops!',
+                    'Please make sure the rate is a number',
+                    'warning'
+                );
+                return;
             }
-
+            storage.set('settings', formData);
+            $(this).attr('action', api + 'settings/post');
+            $(this).attr('method', 'POST');
+            $(this).ajaxSubmit({
+                contentType: 'application/json',
+                success: function (response) {
+                    ipcRenderer.send('app-reload', '');
+                }, error: function (data) {
+                    console.log(data);
+                }
+            });
         });
 
 
@@ -1866,6 +1870,8 @@ if (auth == undefined) {
                 $("#contact").val(settings.contact);
                 $("#tax").val(settings.tax);
                 $("#symbol").val(settings.symbol);
+                $("#currency").val(settings.currency);
+                $("#rate").val(settings.rate);
                 $("#percentage").val(settings.percentage);
                 $("#footer").val(settings.footer);
                 $("#logo_img").val(settings.img);
@@ -2001,7 +2007,7 @@ function loadTransactions() {
                 transaction_list += `<tr>
                                 <td>${trans.order}</td>
                                 <td class="nobr">${moment(trans.date).format('YYYY MMM DD HH:mm:ss')}</td>
-                                <td>${settings.symbol + parseFloat(trans.total.replace(/,/g, '')).toLocaleString()}</td>
+                                <td>${settings.symbol + compute_price(parseFloat(trans.total.replace(/,/g, ''))).toLocaleString()}</td>
                                 <td>${trans.paid == "" ? "" : settings.symbol + parseFloat(trans.paid.replace(/,/g, '')).toLocaleString()}</td>
                                 <td>${trans.change ? settings.symbol + Math.abs(parseFloat(trans.change.replace(/,/g, ''))).toLocaleString() : ''}</td>
                                 <td>${trans.payment_type}</td>
@@ -2011,7 +2017,7 @@ function loadTransactions() {
 
                 if (counter == transactions.length) {
 
-                    $('#total_sales #counter').text(settings.symbol + sales.toLocaleString());
+                    $('#total_sales #counter').text(settings.symbol + compute_price(sales).toLocaleString());
                     $('#total_transactions #counter').text(transact);
 
                     const result = {};
@@ -2114,7 +2120,7 @@ function loadSoldProducts() {
             <td>${item.product}</td>
             <td>${item.qty}</td>
             <td>${product[0].stock == 1 ? product.length > 0 ? product[0].quantity : '' : 'N/A'}</td>
-            <td>${settings.symbol + (item.qty * parseFloat(item.price.replace(/,/g, ''))).toLocaleString()}</td>
+            <td>${settings.symbol + compute_price(item.qty * parseFloat(item.price.replace(/,/g, ''))).toLocaleString()}</td>
             </tr>`;
 
         if (counter == sold.length) {
@@ -2167,7 +2173,7 @@ $.fn.viewTransaction = function (index) {
     let products = allTransactions[index].items;
 
     products.forEach(item => {
-        items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + "<span style='font-size: x-small'>" + settings.symbol + "</span>" + (parseFloat(item.price.replace(/,/g, '')) * item.quantity).toLocaleString() + "</td></tr>";
+        items += "<tr><td>" + item.product_name + "</td><td>" + item.quantity + "</td><td>" + "<span style='font-size: x-small'>" + settings.symbol + "</span>" + compute_price(parseFloat(item.price.replace(/,/g, '')) * item.quantity).toLocaleString() + "</td></tr>";
 
     });
 
@@ -2206,7 +2212,7 @@ $.fn.viewTransaction = function (index) {
         tax_row = `<tr>
                 <td>Vat(${settings.percentage})% </td>
                 <td>:</td>
-                <td><span style='font-size: x-small'>${settings.symbol}</span>${parseFloat(allTransactions[index].tax).toLocaleString()}</td>
+                <td><span style='font-size: x-small'>${settings.symbol}</span>${compute_price(parseFloat(allTransactions[index].tax)).toLocaleString()}</td>
             </tr>`;
     }
 
@@ -2247,12 +2253,12 @@ $.fn.viewTransaction = function (index) {
         <tr>                        
             <td><b>Subtotal</b></td>
             <td>:</td>
-            <td><b><span style='font-size: x-small'>${settings.symbol}</span>${parseFloat(allTransactions[index].subtotal.replace(/,/g, '')).toLocaleString()}</b></td>
+            <td><b><span style='font-size: x-small'>${settings.symbol}</span>${compute_price(parseFloat(allTransactions[index].subtotal.replace(/,/g, ''))).toLocaleString()}</b></td>
         </tr>
         <tr>
             <td>Discount</td>
             <td>:</td>
-            <td><span style='font-size: x-small'>${settings.symbol}</span>${discount > 0? parseFloat(allTransactions[index].discount.replace(/,/g, '')).toLocaleString() : "---"}</td>
+            <td><span style='font-size: x-small'>${settings.symbol}</span>${discount > 0? compute_price(parseFloat(allTransactions[index].discount.replace(/,/g, ''))).toLocaleString() : "---"}</td>
         </tr>
         
         ${tax_row}
@@ -2261,7 +2267,7 @@ $.fn.viewTransaction = function (index) {
             <td><h3>Total</h3></td>
             <td><h3>:</h3></td>
             <td>
-                <h3><span style='font-size: x-small'>${settings.symbol}</span>${parseFloat(allTransactions[index].total.replace(/,/g, '')).toLocaleString()}</h3>
+                <h3><span style='font-size: x-small'>${settings.symbol}</span>${compute_price(parseFloat(allTransactions[index].total.replace(/,/g, ''))).toLocaleString()}</h3>
             </td>
         </tr>
         ${payment == 0 ? '' : payment}

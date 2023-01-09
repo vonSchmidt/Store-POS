@@ -79,6 +79,8 @@ app.post( "/post", upload.single('imagename'), function ( req, res ) {
             "contact": req.body.contact,
             "tax": req.body.tax,
             "symbol": req.body.symbol,
+            "currency": req.body.currency,
+            "rate": req.body.rate,
             "percentage": req.body.percentage,
             "charge_tax": req.body.charge_tax,
             "footer": req.body.footer,

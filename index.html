@@ -627,21 +627,26 @@
                             <input type="hidden" name="img" id="img">
                             <input type="hidden" name="remove" id="remove_img">
                             <div class="form-group">
-                                <label for="userName">Category</label>
+                                <label for="category">Category</label>
                                 <select name="category" class="form-control" id="category"></select>
                             </div>
                             <div class="form-group">
-                                <label for="userName">Product Name</label>
+                                <label for="name">Product Name</label>
                                 <input type="text" required="required" name="name" parsley-trigger="change"
                                        placeholder="Enter a product name" class="form-control" id="productName">
                             </div>
                             <div class="form-group">
-                                <label for="userName">Price</label>
+                                <label for="price">Price</label>
                                 <input type="text" required="required" name="price" placeholder="Price"
-                                       class="form-control" id="product_price">
+                                       class="form-control" id="product_price" onkeyup="$('#display_price').val(compute_price(this.value));">
                             </div>
                             <div class="form-group">
-                                <label for="userName">Stock</label>
+                                <label for="display_price">Price</label>
+                                <input readonly type="text" required="required" name="display_price" placeholder="Display Price"
+                                       class="form-control" id="display_price">
+                            </div>
+                            <div class="form-group">
+                                <label for="quantity">Stock</label>
                                 <input type="text" name="quantity" placeholder="Available stock" class="form-control"
                                        id="quantity">
                             </div>
@@ -650,7 +655,7 @@
                                               style="max-width: 30px; float: left;"> Disable stock check </label>
                             </div>
                             <div class="form-group">
-                                <label for="userName"><span id="rmv_img" class="btn btn-xs btn-warning">Remove</span>
+                                <label for="imagename"><span id="rmv_img" class="btn btn-xs btn-warning">Remove</span>
                                     Picture </label>
                                 <div id="current_img"></div>
                                 <input type="file" name="imagename" id="imagename">
@@ -983,41 +988,31 @@
                                 <div class="col-md-6">
 
                                     <div class="form-group">
-                                        <label for="userName">Store Name</label>
+                                        <label for="store">Store Name</label>
                                         <input type="text" required="required" name="store" class="form-control"
                                                id="store">
                                     </div>
                                     <div class="form-group">
-                                        <label for="userName">Address Line 1</label>
+                                        <label for="address_one">Address Line 1</label>
                                         <input type="text" required="required" name="address_one" class="form-control"
                                                id="address_one">
                                     </div>
                                     <div class="form-group">
-                                        <label for="userName">Address Line 2</label>
+                                        <label for="address_two">Address Line 2</label>
                                         <input type="text" required="required" name="address_two" class="form-control"
                                                id="address_two">
                                     </div>
                                     <div class="form-group">
-                                        <label for="userName">Contact Number</label>
+                                        <label for="contact">Contact Number</label>
                                         <input type="text" name="contact" class="form-control" id="contact">
                                     </div>
                                     <div class="form-group">
-                                        <label for="userName">Vat Number</label>
+                                        <label for="tax">Vat Number</label>
                                         <input type="text" name="tax" parsley-trigger="change" class="form-control"
                                                id="tax">
                                     </div>
-
-
-                                </div>
-                                <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="userName">Currency Symbol</label>
-                                        <input type="text" required="required" name="symbol" class="form-control"
-                                               id="symbol">
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="userName">Vat Percentage</label>
+                                        <label for="percentage">Vat Percentage</label>
                                         <div style="width: 80%; float:left;">
                                             <input type="text" required="required" name="percentage"
                                                    class="form-control" id="percentage">
@@ -1029,8 +1024,28 @@
                                         <label><input type="checkbox" name="charge_tax" id="charge_tax"> Charge
                                             Vat</label>
                                     </div>
+
+
+                                </div>
+                                <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="userName"><span id="rmv_logo"
+                                        <label for="symbol">Display Currency Symbol</label>
+                                        <input type="text" required="required" name="symbol" class="form-control"
+                                               id="symbol">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="currency">Business Currency</label>
+                                        <input type="text" required="required" name="currency" class="form-control"
+                                               id="currency">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="rate">Rate</label>
+                                        <input type="number" required="required" name="rate" class="form-control"
+                                               id="rate">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="imagename"><span id="rmv_logo"
                                                                     class="btn btn-xs btn-warning">Remove</span> Logo
                                         </label>
                                         <div id="current_logo"></div>
@@ -1038,7 +1053,7 @@
                                         <input type="file" name="imagename" id="logoname">
                                     </div>
                                     <div class="form-group">
-                                        <label for="userName">Receipt Footer</label>
+                                        <label for="footer">Receipt Footer</label>
                                         <textarea name="footer" class="form-control" id="footer"></textarea>
                                     </div>
                                 </div>
