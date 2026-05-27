@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Point Of Sale</title>
     <link href="assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
     <link href="assets/css/core.css" rel="stylesheet" type="text/css" />
@@ -958,14 +959,30 @@
 
 </div>
 
-<script> window.$ = window.jQuery = require('jquery'); </script>
+<!-- Electron path: nodeIntegration gives us require() -->
+<script>
+  if (typeof require !== 'undefined') {
+    window.$ = window.jQuery = require('jquery');
+    require('./renderer.js');
+  }
+</script>
 
-<script> 
-
-
-require('./renderer.js');
-
-    </script>
+<!-- Browser path: load deps as plain script tags -->
+<script>
+  if (typeof require === 'undefined') {
+    var _s = function(src) {
+      document.write('<scr'+'ipt src="'+src+'"><\/scr'+'ipt>');
+    };
+    _s('node_modules/jquery/dist/jquery.min.js');
+    _s('node_modules/moment/moment.js');
+    _s('node_modules/sweetalert2/dist/sweetalert2.all.min.js');
+    _s('node_modules/jsbarcode/build/JsBarcode.all.min.js');
+    _s('node_modules/jspdf/dist/jspdf.umd.min.js');
+    _s('node_modules/print-js/dist/print.min.js');
+    _s('assets/js/pos.js');
+    _s('assets/js/product-filter.js');
+  }
+</script>
 
     <script src="assets/plugins/bootstrap/bootstrap.min.js"></script>
     <script src="assets/plugins/chosen/chosen.jquery.min.js"></script>
