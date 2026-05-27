@@ -45,6 +45,8 @@
     "electron": "cross-env NODE_ENV=dev nodemon --exec \"\"electron .\"\"",
     "electron-build": "electron-builder",
     "package-win": "electron-packager . POS --overwrite --asar=false --platform=win32 --arch=x64 --icon=assets/images/icon.ico --prune=true --out=release-builds --version-string.ProductName=\"POS\"",
+    "zip-win": "node scripts/zip-release.js",
+    "dist-win": "npm run package-win && npm run zip-win",
     "test": "npm run test:api",
     "test:api": "jest --runInBand",
     "test:e2e": "playwright test",
@@ -67,6 +69,7 @@
     "cross-env": "^6.0.3",
     "electron-builder": "^21.2.0",
     "electron-is-dev": "^1.1.0",
+    "electron-packager": "^17.1.2",
     "jest": "^30.4.2",
     "nodemon": "^1.19.3",
     "supertest": "^7.2.2"
