@@ -1,0 +1,17 @@
+{
+  // ── Jest (API tests) ────────────────────────────────────────────────────────
+  "jest.jestCommandLine": "npm run test:api --",
+  "jest.rootPath": "${workspaceFolder}",
+  "jest.autoRun": "off",
+  "jest.showCoverageOnLoad": false,
+
+  // ── Playwright (E2E tests) ──────────────────────────────────────────────────
+  "playwright.reuseBrowser": false,
+  "playwright.showTrace": false,
+
+  // ── Explorer ────────────────────────────────────────────────────────────────
+  "files.exclude": {
+    "release-builds": true,
+    "test-results": true
+  }
+}

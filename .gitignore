@@ -1,2 +1,5 @@
 /node_modules
 undefined
+release-builds/*
+dist/*
+build/*
