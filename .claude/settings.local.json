@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx electron *)",
+      "Bash(npm install *)",
+      "Bash(npx jest *)",
+      "Bash(npx playwright *)",
+      "Bash(node -e \"console.log\\('electron:', require\\('./node_modules/electron/package.json'\\).version\\); console.log\\('electron-store:', require\\('./node_modules/electron-store/package.json'\\).version\\)\")",
+      "Bash(node -e \"const s = require\\('./node_modules/electron-store'\\); console.log\\(require\\('fs'\\).readFileSync\\('./node_modules/electron-store/index.js', 'utf8'\\).slice\\(0, 500\\)\\)\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(Start-Sleep -Seconds 4)",
+      "Bash(Get-Content \"C:\\\\Users\\\\BRUNO\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--workspaces-POS-Store-POS\\\\ee2442a3-c472-48f0-91e2-676f7a7d1a4a\\\\tasks\\\\b8xuea77v.output\" -Tail 20)",
+      "Bash(node_modules\\\\.bin\\\\electron .)",
+      "Bash(taskkill /F /IM electron.exe)",
+      "Bash(exit 0)",
+      "PowerShell(Stop-Process *)"
+    ]
+  }
+}

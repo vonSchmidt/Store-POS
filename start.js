@@ -4,7 +4,7 @@ const setupEvents = require('./installers/setupEvents')
  }
 
 const server = require('./server');
-const {app, BrowserWindow, ipcMain, screen} = require('electron');
+const {app, BrowserWindow, ipcMain, dialog, screen} = require('electron');
 const path = require('path')
 
 const contextMenu = require('electron-context-menu');
@@ -64,6 +64,10 @@ ipcMain.on('app-quit', (evt, arg) => {
 
 ipcMain.on('app-reload', (event, arg) => {
   mainWindow.reload();
+});
+
+ipcMain.handle('dialog:openFile', async (event, options) => {
+  return dialog.showOpenDialog(mainWindow, options);
 });
 
 

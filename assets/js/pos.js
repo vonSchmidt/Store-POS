@@ -63,6 +63,7 @@ let end_date = moment(end).toDate();
 let by_till = 0;
 let by_user = 0;
 let by_status = 1;
+let dateRangeCustomized = false;
 
 $(function () {
 
@@ -268,7 +269,7 @@ if (auth == undefined) {
 
                 customers.forEach(cust => {
 
-                    let customer = `<option value='{"id": ${cust._id}, "name": "${cust.name}"}'>${cust.name}</option>`;
+                    let customer = `<option value="${encodeURIComponent(JSON.stringify({id: cust._id, name: cust.name}))}">${cust.name}</option>`;
                     $('#customer').append(customer);
                 });
 
@@ -645,7 +646,7 @@ if (auth == undefined) {
             let currentTime = new Date(moment());
 
             let discount = $("#inputDiscount").val();
-            let customer = JSON.parse($("#customer").val());
+            let customer = (function() { var v = $("#customer").val(); return v === '0' ? 0 : JSON.parse(decodeURIComponent(v)); })();
             let date = moment(currentTime).format("YYYY-MM-DD HH:mm:ss");
             let paid = $("#payment").val() == "" ? "" : parseFloat($("#payment").val()).toFixed(2);
             let change = $("#change").text() == "" ? "" : parseFloat($("#change").text()).toFixed(2);
@@ -1111,6 +1112,12 @@ if (auth == undefined) {
 
 
         $('#transactions').click(function () {
+            // Refresh the default date window to "this month → now" each time
+            // the tab is opened, unless the user has applied a custom range.
+            if (!dateRangeCustomized) {
+                start_date = moment().startOf('month').toDate();
+                end_date = moment().toDate();
+            }
             loadTransactions();
             loadUserList();
 
@@ -1706,8 +1713,6 @@ if (auth == undefined) {
             e.preventDefault();
             let formData = $(this).serializeObject();
 
-            console.log(formData);
-
             if (ownUserEdit) {
                 if (formData.password != atob(user.password)) {
                     if (formData.password != formData.pass) {
@@ -1807,7 +1812,7 @@ if (auth == undefined) {
 
         $('#add-user').click(function () {
 
-            if (platform.app != 'Network Point of Sale Terminal') {
+            if (!platform || platform.app != 'Network Point of Sale Terminal') {
                 $('.perms').show();
             }
 
@@ -1820,7 +1825,7 @@ if (auth == undefined) {
 
         $('#settings').click(function () {
 
-            if (platform.app == 'Network Point of Sale Terminal') {
+            if (platform && platform.app == 'Network Point of Sale Terminal') {
                 $('#net_settings_form').show(500);
                 $('#settings_form').hide(500);
 
@@ -1888,39 +1893,149 @@ if (auth == undefined) {
     });
 
 
-    $('#print_list').click(function () {
-
-        $("#loading").show();
-
-        $('#productList').DataTable().destroy();
-
-        const filename = 'productList.pdf';
-
-        html2canvas($('#all_products').get(0)).then(canvas => {
-            let height = canvas.height * (25.4 / 96);
-            let width = canvas.width * (25.4 / 96);
-            let pdf = new jsPDF('p', 'mm', 'a4');
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, width, height);
-
-            $("#loading").hide();
-            pdf.save(filename);
+    // ── Export current products as CSV ──────────────────────────────────────
+    $('#export_csv').click(function () {
+        const headers = 'category,name,price,quantity,unlimited_stock,sku,sort';
+        const rows = allProducts.map(function (p) {
+            const cat = allCategories.find(function (c) { return c._id == p.category; });
+            return [
+                _csvEscape(cat ? cat.name : ''),
+                _csvEscape(p.name),
+                p.price,
+                p.stock == 1 ? p.quantity : 0,
+                p.stock == 1 ? '' : 'yes',
+                _csvEscape(p.sku || ''),
+                p.sort || 0
+            ].join(',');
         });
-
-
-
-        $('#productList').DataTable({
-            "order": [[1, "desc"]]
-            , "autoWidth": false
-            , "info": true
-            , "JQueryUI": true
-            , "ordering": true
-            , "paging": false
-        });
-
-        $(".loading").hide();
-
+        _downloadCsv([headers].concat(rows).join('\n'), 'products.csv');
     });
 
+    // ── Download blank import template ──────────────────────────────────────
+    $('#download_template').click(function () {
+        var csv = [
+            'category,name,price,quantity,unlimited_stock,sku,sort',
+            'General,Example Product,9.99,100,,SKU001,0',
+            'Drinks,Unlimited Item,4.50,0,yes,SKU002,0'
+        ].join('\n');
+        _downloadCsv(csv, 'products_template.csv');
+    });
+
+    // ── Import CSV ───────────────────────────────────────────────────────────
+    $('#import_csv_btn').on('click', async function () {
+        const ipcRenderer = require('electron').ipcRenderer;
+        const fs = require('fs');
+        const result = await ipcRenderer.invoke('dialog:openFile', {
+            title: 'Import Products CSV',
+            filters: [{ name: 'CSV', extensions: ['csv'] }],
+            properties: ['openFile']
+        });
+        if (result.canceled || !result.filePaths.length) return;
+        const content = fs.readFileSync(result.filePaths[0], 'utf8');
+        (async function (text) {
+            // Strip UTF-8 BOM if present (Excel exports include it)
+            var cleaned = text.replace(/^﻿/, '');
+            var lines = cleaned.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+            if (lines.length < 2) {
+                Swal.fire('Error', 'CSV must have a header row and at least one data row.', 'error');
+                return;
+            }
+            var headers = _parseCsvLine(lines[0]).map(function (h) { return h.trim().toLowerCase(); });
+            var rows = lines.slice(1).map(function (line) {
+                var vals = _parseCsvLine(line);
+                var obj = {};
+                headers.forEach(function (h, i) { obj[h] = (vals[i] || '').trim(); });
+                return obj;
+            }).filter(function (r) { return r.name; });
+
+            if (rows.length === 0) {
+                Swal.fire('Error', 'No valid rows found (name column is required).', 'error');
+                return;
+            }
+
+            // Reload categories fresh, then create any missing ones
+            var freshCats = await fetch(api + 'categories/all').then(function (r) { return r.json(); });
+            var catMap = {};
+            freshCats.forEach(function (c) { catMap[c.name.toLowerCase()] = c._id; });
+
+            var uniqueCatNames = [...new Set(rows.map(function (r) { return (r.category || '').trim(); }).filter(Boolean))];
+            for (var catName of uniqueCatNames) {
+                if (catMap[catName.toLowerCase()] === undefined) {
+                    await fetch(api + 'categories/category', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: catName })
+                    });
+                }
+            }
+            // Re-fetch categories after any inserts
+            freshCats = await fetch(api + 'categories/all').then(function (r) { return r.json(); });
+            freshCats.forEach(function (c) { catMap[c.name.toLowerCase()] = c._id; });
+
+            var success = 0, errors = 0;
+            for (var row of rows) {
+                var catKey = (row.category || '').trim().toLowerCase();
+                var catId = catKey ? (catMap[catKey] !== undefined ? catMap[catKey] : 0) : 0;
+                var fd = new FormData();
+                fd.append('id', '');
+                fd.append('name', row.name);
+                fd.append('price', row.price || '0');
+                fd.append('quantity', row.quantity || '0');
+                fd.append('stock', (row.unlimited_stock || '').toLowerCase() === 'yes' ? 'on' : '');
+                fd.append('category', catId);
+                fd.append('sku', row.sku || '');
+                fd.append('sort', row.sort || '0');
+                fd.append('img', '');
+                fd.append('remove', '');
+                var res = await fetch(api + 'inventory/product', { method: 'POST', body: fd });
+                if (res.ok) success++; else errors++;
+            }
+
+            loadCategories();
+            loadProducts();
+
+            Swal.fire({
+                icon: errors > 0 ? 'warning' : 'success',
+                title: 'Import Complete',
+                text: success + ' imported' + (errors > 0 ? ', ' + errors + ' failed' : '') + '.'
+            });
+        })(content);
+    });
+
+}
+
+
+function _csvEscape(val) {
+    var s = String(val);
+    if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) {
+        return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+}
+
+function _parseCsvLine(line) {
+    var result = [], cur = '', inQuotes = false;
+    for (var i = 0; i < line.length; i++) {
+        var ch = line[i];
+        if (ch === '"') {
+            if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+            else { inQuotes = !inQuotes; }
+        } else if (ch === ',' && !inQuotes) {
+            result.push(cur); cur = '';
+        } else {
+            cur += ch;
+        }
+    }
+    result.push(cur);
+    return result;
+}
+
+function _downloadCsv(csv, filename) {
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
 }
 
 
@@ -1944,7 +2059,7 @@ function loadTransactions() {
 
     let counter = 0;
     let transaction_list = '';
-    let query = `by-date?start=${start_date}&end=${end_date}&user=${by_user}&status=${by_status}&till=${by_till}`;
+    let query = `by-date?start=${encodeURIComponent(new Date(start_date).toJSON())}&end=${encodeURIComponent(new Date(end_date).toJSON())}&user=${by_user}&status=${by_status}&till=${by_till}`;
 
 
     $.get(api + query, function (transactions) {
@@ -1981,8 +2096,8 @@ function loadTransactions() {
                 transaction_list += `<tr>
                                 <td>${trans.order}</td>
                                 <td class="nobr">${moment(trans.date).format('YYYY MMM DD hh:mm:ss')}</td>
-                                <td>${settings.symbol + trans.total}</td>
-                                <td>${trans.paid == "" ? "" : settings.symbol + trans.paid}</td>
+                                <td>${settings.symbol + parseFloat(trans.total).toFixed(2)}</td>
+                                <td>${trans.paid == "" ? "" : settings.symbol + parseFloat(trans.paid).toFixed(2)}</td>
                                 <td>${trans.change ? settings.symbol + Math.abs(trans.change).toFixed(2) : ''}</td>
                                 <td>${trans.paid == "" ? "" : trans.payment_type}</td>
                                 <td>${trans.till}</td>
@@ -2139,7 +2254,7 @@ $.fn.viewTransaction = function (index) {
     transaction_index = index;
 
     let discount = allTransactions[index].discount;
-    let customer = allTransactions[index].customer == 0 ? 'Walk in Customer' : allTransactions[index].customer.username;
+    let customer = allTransactions[index].customer == 0 ? 'Walk in Customer' : allTransactions[index].customer.name;
     let refNumber = allTransactions[index].ref_number != "" ? allTransactions[index].ref_number : allTransactions[index].order;
     let orderNumber = allTransactions[index].order;
     let type = "";
@@ -2163,6 +2278,7 @@ $.fn.viewTransaction = function (index) {
     }
 
 
+    let payment = '';
     if (allTransactions[index].paid != "") {
         payment = `<tr>
                     <td>Paid</td>
@@ -2290,6 +2406,7 @@ $('#reportrange').on('apply.daterangepicker', function (ev, picker) {
 
     start_date = picker.startDate.toDate().toJSON();
     end_date = picker.endDate.toDate().toJSON();
+    dateRangeCustomized = true;
 
 
     loadTransactions();
