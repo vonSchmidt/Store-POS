@@ -1,7 +1,7 @@
 const app = require( "express" )();
 const server = require( "http" ).Server( app );
 const bodyParser = require( "body-parser" );
-const Datastore = require( "nedb" );
+const Datastore = require( "@seald-io/nedb" );
 const async = require( "async" );
 
 
@@ -32,7 +32,7 @@ app.get( "/all", function ( req, res ) {
  
 app.post( "/category", function ( req, res ) {
     let newCategory = req.body;
-    newCategory._id = Math.floor(Date.now() / 1000); 
+    newCategory._id = Date.now();
     categoryDB.insert( newCategory, function ( err, category) {
         if ( err ) res.status( 500 ).send( err );
         else res.sendStatus( 200 );

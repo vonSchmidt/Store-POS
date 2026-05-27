@@ -29,10 +29,13 @@ let moment = require('moment');
 let Swal = require('sweetalert2');
 let { ipcRenderer } = require('electron');
 let dotInterval = setInterval(function () { $(".dot").text('.') }, 3000);
+// Electron 22+ compat: remote was removed. Shim electron.app so electron-store can find userData.
+const _el = require('electron');
+if (!_el.app) {
+    _el.app = { getPath: () => (process.env.APPDATA || '') + '/POS' };
+}
 let Store = require('electron-store');
-const remote = require('electron').remote;
-const app = remote.app;
-let img_path = app.getPath('appData') + '/POS/uploads/';
+let img_path = (process.env.APPDATA || '') + '/POS/uploads/';
 let api = 'http://' + host + ':' + port + '/api/';
 let btoa = require('btoa');
 let jsPDF = require('jspdf');
@@ -81,7 +84,6 @@ $(function () {
             'Yesterday': [moment().subtract(1, 'days').startOf('day'), moment().subtract(1, 'days').endOf('day')],
             'Last 7 Days': [moment().subtract(6, 'days').startOf('day'), moment().endOf('day')],
             'Last 30 Days': [moment().subtract(29, 'days').startOf('day'), moment().endOf('day')],
-            'This Month': [moment().startOf('month'), moment().endOf('month')],
             'This Month': [moment().startOf('month'), moment()],
             'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
         }
@@ -206,6 +208,7 @@ if (auth == undefined) {
                 });
 
                 allProducts = [...data];
+                categories = [];
 
                 loadProductList();
 
@@ -224,7 +227,7 @@ if (auth == undefined) {
                             <div id="image"><img src="${item.img == "" ? "./assets/images/default.jpg" : img_path + item.img}" id="product_img" alt=""></div>                    
                                         <div class="text-muted m-t-5 text-center">
                                         <div class="name" id="product_name">${item.name}</div> 
-                                        <span class="sku">${item.sku}</span>
+                                        <span class="sku">${item.sku || item._id}</span>
                                         <span class="stock">STOCK </span><span class="count">${item.stock == 1 ? item.quantity : 'N/A'}</span></div>
                                         <sp class="text-success text-center"><b data-plugin="counterup">${settings.symbol + item.price}</b> </sp>
                             </div>
@@ -322,7 +325,7 @@ if (auth == undefined) {
                 processData: false,
                 success: function (data) {
 
-                    if (data._id != undefined && data.quantity >= 1) {
+                    if (data && data._id != undefined && (data.stock == 0 || data.quantity >= 1)) {
                         $(this).addProductToCart(data);
                         $("#searchBarCode").get(0).reset();
                         $("#basic-addon2").empty();
@@ -330,7 +333,7 @@ if (auth == undefined) {
                             $('<i>', { class: 'glyphicon glyphicon-ok' })
                         )
                     }
-                    else if (data.quantity < 1) {
+                    else if (data && data.stock == 1 && data.quantity < 1) {
                         Swal.fire(
                             'Out of stock!',
                             'This item is currently unavailable',
@@ -548,8 +551,8 @@ if (auth == undefined) {
 
 
         $.fn.qtDecrement = function (i) {
+            item = cart[i];
             if (item.quantity > 1) {
-                item = cart[i];
                 item.quantity -= 1;
                 $(this).renderTable(cart);
             }
@@ -654,10 +657,7 @@ if (auth == undefined) {
 
             switch (paymentType) {
 
-                case 1: type = "Cheque";
-                    break;
-
-                case 2: type = "Card";
+                case 3: type = "Card";
                     break;
 
                 default: type = "Cash";
@@ -821,8 +821,8 @@ if (auth == undefined) {
                 paid: paid,
                 change: change,
                 _id: orderNumber,
-                till: platform.till,
-                mac: platform.mac,
+                till: platform ? platform.till : 1,
+                mac: platform ? platform.mac : '',
                 user: user.fullname,
                 user_id: user._id
             }
@@ -853,7 +853,7 @@ if (auth == undefined) {
                 }, error: function (data) {
                     $(".loading").hide();
                     $("#dueModal").modal('toggle');
-                    swal("Something went wrong!", 'Please refresh this page and try again');
+                    Swal.fire('Something went wrong!', 'Please refresh this page and try again', 'error');
 
                 }
             });
@@ -1150,6 +1150,11 @@ if (auth == undefined) {
         });
 
 
+        $('#newCategoryModal').click(function () {
+            $('#saveCategory').get(0).reset();
+        });
+
+
         $('#saveProduct').submit(function (e) {
             e.preventDefault();
 
@@ -1245,6 +1250,8 @@ if (auth == undefined) {
 
             $('#product_id').val(allProducts[index]._id);
             $('#img').val(allProducts[index].img);
+            $('#productSku').val(allProducts[index].sku || '');
+            $('#productSort').val(allProducts[index].sort || 0);
 
             if (allProducts[index].img != "") {
 
@@ -1676,7 +1683,7 @@ if (auth == undefined) {
                 );
             }
             else {
-                if (isNumeric(formData.till)) {
+                if ($.isNumeric(formData.till)) {
                     formData['app'] = $('#app').find('option:selected').text();
                     storage.set('settings', formData);
                     ipcRenderer.send('app-reload', '');
@@ -1977,7 +1984,7 @@ function loadTransactions() {
                                 <td>${settings.symbol + trans.total}</td>
                                 <td>${trans.paid == "" ? "" : settings.symbol + trans.paid}</td>
                                 <td>${trans.change ? settings.symbol + Math.abs(trans.change).toFixed(2) : ''}</td>
-                                <td>${trans.paid == "" ? "" : trans.payment_type == 0 ? "Cash" : 'Card'}</td>
+                                <td>${trans.paid == "" ? "" : trans.payment_type}</td>
                                 <td>${trans.till}</td>
                                 <td>${trans.user}</td>
                                 <td>${trans.paid == "" ? '<button class="btn btn-dark"><i class="fa fa-search-plus"></i></button>' : '<button onClick="$(this).viewTransaction(' + index + ')" class="btn btn-info"><i class="fa fa-search-plus"></i></button></td>'}</tr>
@@ -1985,8 +1992,8 @@ function loadTransactions() {
 
                 if (counter == transactions.length) {
 
-                    $('#total_sales #counter').text(settings.symbol + parseFloat(sales).toFixed(2));
-                    $('#total_transactions #counter').text(transact);
+                    $('#sales_counter').text(settings.symbol + parseFloat(sales).toFixed(2));
+                    $('#transactions_counter').text(transact);
 
                     const result = {};
 
@@ -2087,13 +2094,13 @@ function loadSoldProducts() {
         sold_list += `<tr>
             <td>${item.product}</td>
             <td>${item.qty}</td>
-            <td>${product[0].stock == 1 ? product.length > 0 ? product[0].quantity : '' : 'N/A'}</td>
+            <td>${product.length > 0 ? (product[0].stock == 1 ? product[0].quantity : 'N/A') : 'N/A'}</td>
             <td>${settings.symbol + (item.qty * parseFloat(item.price)).toFixed(2)}</td>
             </tr>`;
 
         if (counter == sold.length) {
-            $('#total_items #counter').text(items);
-            $('#total_products #counter').text(products);
+            $('#items_counter').text(items);
+            $('#products_counter').text(products);
             $('#product_sales').html(sold_list);
         }
     });
@@ -2148,7 +2155,7 @@ $.fn.viewTransaction = function (index) {
 
     switch (allTransactions[index].payment_type) {
 
-        case 2: type = "Card";
+        case "Card": type = "Card";
             break;
 
         default: type = "Cash";

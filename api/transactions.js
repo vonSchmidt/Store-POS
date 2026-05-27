@@ -1,7 +1,7 @@
 let app = require("express")();
 let server = require("http").Server(app);
 let bodyParser = require("body-parser");
-let Datastore = require("nedb");
+let Datastore = require("@seald-io/nedb");
 let Inventory = require("./inventory");
 
 app.use(bodyParser.json());
@@ -124,7 +124,12 @@ app.put("/new", function(req, res) {
       order
   ) {
       if ( err ) res.status( 500 ).send( err );
-      else res.sendStatus( 200 );
+      else {
+        res.sendStatus( 200 );
+        if (req.body.paid >= req.body.total) {
+          Inventory.decrementInventory(req.body.items);
+        }
+      }
   } );
 });
 

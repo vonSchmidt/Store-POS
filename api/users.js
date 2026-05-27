@@ -1,7 +1,7 @@
 const app = require( "express")();
 const server = require( "http" ).Server( app );
 const bodyParser = require( "body-parser" );
-const Datastore = require( "nedb" );
+const Datastore = require( "@seald-io/nedb" );
 const btoa = require('btoa');
 app.use( bodyParser.json() );
 
@@ -114,10 +114,10 @@ app.post( "/post" , function ( req, res ) {
             "status": ""
           }
 
-    if(req.body.id == "") { 
-       User._id = Math.floor(Date.now() / 1000);
+    if(req.body.id == "") {
+       User._id = Date.now();
        usersDB.insert( User, function ( err, user ) {
-            if ( err ) res.status( 500 ).send( req );
+            if ( err ) res.status( 500 ).send( err );
             else res.send( user );
         });
     }
@@ -154,7 +154,7 @@ app.get( "/check", function ( req, res ) {
         _id: 1
 }, function ( err, docs ) {
         if(!docs) {
-            let User = { 
+            let User = {
                 "_id": 1,
                 "username": "admin",
                 "password": btoa("admin"),
@@ -166,8 +166,11 @@ app.get( "/check", function ( req, res ) {
                 "perm_settings": 1,
                 "status": ""
               }
-            usersDB.insert( User, function ( err, user ) {                            
+            usersDB.insert( User, function ( err, user ) {
+                res.sendStatus( 200 );
             });
+        } else {
+            res.sendStatus( 200 );
         }
     } );
 } );

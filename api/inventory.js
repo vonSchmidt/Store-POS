@@ -1,7 +1,7 @@
 const app = require( "express" )();
 const server = require( "http" ).Server( app );
 const bodyParser = require( "body-parser" );
-const Datastore = require( "nedb" );
+const Datastore = require( "@seald-io/nedb" );
 const async = require( "async" );
 const fileUpload = require('express-fileupload');
 const multer = require("multer");
@@ -54,7 +54,7 @@ app.get( "/product/:productId", function ( req, res ) {
 
  
 app.get( "/products", function ( req, res ) {
-    inventoryDB.find( {}, function ( err, docs ) {
+    inventoryDB.find( {} ).sort( { sort: 1, _id: 1 } ).exec( function ( err, docs ) {
         res.send( docs );
     } );
 } );
@@ -75,7 +75,7 @@ app.post( "/product", upload.single('imagename'), function ( req, res ) {
  
 
     if(req.body.remove == 1) {
-        const path = './resources/app/public/uploads/product_image/'+ req.body.img;
+        const path = process.env.APPDATA + '/POS/uploads/' + req.body.img;
         try {
           fs.unlinkSync(path)
         } catch(err) {
@@ -93,12 +93,14 @@ app.post( "/product", upload.single('imagename'), function ( req, res ) {
         category: req.body.category,
         quantity: req.body.quantity == "" ? 0 : req.body.quantity,
         name: req.body.name,
-        stock: req.body.stock == "on" ? 0 : 1,    
-        img: image        
+        sku: req.body.sku || '',
+        sort: parseInt(req.body.sort) || 0,
+        stock: req.body.stock == "on" ? 0 : 1,
+        img: image
     }
 
     if(req.body.id == "") { 
-        Product._id = Math.floor(Date.now() / 1000);
+        Product._id = Date.now();
         inventoryDB.insert( Product, function ( err, product ) {
             if ( err ) res.status( 500 ).send( err );
             else res.send( product );
@@ -136,10 +138,14 @@ app.delete( "/product/:productId", function ( req, res ) {
 
 app.post( "/product/sku", function ( req, res ) {
     var request = req.body;
-    inventoryDB.findOne( {
-            _id: parseInt(request.skuCode)
-    }, function ( err, product ) {
-         res.send( product );
+    inventoryDB.findOne( { _id: parseInt(request.skuCode) }, function ( err, product ) {
+        if ( product ) {
+            res.send( product );
+        } else {
+            inventoryDB.findOne( { sku: request.skuCode }, function ( err, bysku ) {
+                res.send( bysku );
+            } );
+        }
     } );
 } );
 
@@ -156,7 +162,7 @@ app.decrementInventory = function ( products ) {
             product
         ) {
     
-            if ( !product || !product.quantity ) {
+            if ( !product || product.stock !== 1 ) {
                 callback();
             } else {
                 let updatedQuantity =
