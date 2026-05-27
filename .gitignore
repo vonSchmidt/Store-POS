@@ -1,5 +1,6 @@
 /node_modules
-undefined
-release-builds/*
-dist/*
-build/*
+/release-builds
+/dist
+/build
+/test-results
+/package-lock.json
