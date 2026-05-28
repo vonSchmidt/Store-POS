@@ -22,26 +22,38 @@ let order_index = 0;
 let user_index = 0;
 let product_index = 0;
 let transaction_index;
-let host = 'localhost';
-let path = require('path');
-let port = '8001';
-let moment = require('moment');
-let Swal = require('sweetalert2');
-let { ipcRenderer } = require('electron');
-let dotInterval = setInterval(function () { $(".dot").text('.') }, 3000);
-// Electron 22+ compat: remote was removed. Shim electron.app so electron-store can find userData.
-const _el = require('electron');
-if (!_el.app) {
-    _el.app = { getPath: () => (process.env.APPDATA || '') + '/POS' };
+const isBrowser = typeof require === 'undefined';
+const host = 'localhost';
+const port = '8001';
+
+let moment, Swal, ipcRenderer, img_path, api, jsPDF, JsBarcode, macaddress;
+
+if (!isBrowser) {
+    moment     = require('moment');
+    Swal       = require('sweetalert2');
+    ipcRenderer = require('electron').ipcRenderer;
+    // Electron 22+ compat: remote was removed. Shim electron.app so electron-store can find userData.
+    const _el = require('electron');
+    if (!_el.app) {
+        _el.app = { getPath: () => (process.env.APPDATA || '') + '/POS' };
+    }
+    img_path   = (process.env.APPDATA || '') + '/POS/uploads/';
+    api        = 'http://localhost:8001/api/';
+    jsPDF      = require('jspdf');
+    JsBarcode  = require('jsbarcode');
+    macaddress = require('macaddress');
+    // btoa is native in Node 16+ / Electron; no require needed
+} else {
+    moment     = window.moment;
+    Swal       = window.Swal;
+    ipcRenderer = null;
+    img_path   = '/uploads/';
+    api        = window.location.origin + '/api/';
+    jsPDF      = window.jspdf ? window.jspdf.jsPDF : null;
+    JsBarcode  = window.JsBarcode;
+    macaddress = { one: function (cb) { cb(null, '00:00:00:00:00:00'); } };
 }
-let Store = require('electron-store');
-let img_path = (process.env.APPDATA || '') + '/POS/uploads/';
-let api = 'http://' + host + ':' + port + '/api/';
-let btoa = require('btoa');
-let jsPDF = require('jspdf');
-let html2canvas = require('html2canvas');
-let JsBarcode = require('jsbarcode');
-let macaddress = require('macaddress');
+let dotInterval = setInterval(function () { $(".dot").text('.'); }, 3000);
 let categories = [];
 let holdOrderList = [];
 let customerOrderList = [];
@@ -52,7 +64,17 @@ let auth_error = 'Incorrect username or password';
 let auth_empty = 'Please enter a username and password';
 let holdOrderlocation = $("#randerHoldOrders");
 let customerOrderLocation = $("#randerCustomerOrders");
-let storage = new Store();
+let storage;
+if (isBrowser) {
+    storage = {
+        get: function (key) { try { return JSON.parse(localStorage.getItem('pos_' + key)); } catch (e) { return undefined; } },
+        set: function (key, val) { localStorage.setItem('pos_' + key, JSON.stringify(val)); },
+        delete: function (key) { localStorage.removeItem('pos_' + key); }
+    };
+} else {
+    const Store = require('electron-store');
+    storage = new Store();
+}
 let settings;
 let platform;
 let user = {};
@@ -64,6 +86,11 @@ let by_till = 0;
 let by_user = 0;
 let by_status = 1;
 let dateRangeCustomized = false;
+
+function appReload() {
+    if (isBrowser) { window.location.reload(); }
+    else { ipcRenderer.send('app-reload', ''); }
+}
 
 $(function () {
 
@@ -134,7 +161,7 @@ if (auth == undefined) {
     if (platform != undefined) {
 
         if (platform.app == 'Network Point of Sale Terminal') {
-            api = 'http://' + platform.ip + ':' + port + '/api/';
+            if (!isBrowser) { api = 'http://' + platform.ip + ':' + port + '/api/'; }
             perms = true;
         }
     }
@@ -1621,7 +1648,7 @@ if (auth == undefined) {
                     $.get(api + 'users/logout/' + user._id, function (data) {
                         storage.delete('auth');
                         storage.delete('user');
-                        ipcRenderer.send('app-reload', '');
+                        appReload();
                     });
                 }
             });
@@ -1634,7 +1661,7 @@ if (auth == undefined) {
             let formData = $(this).serializeObject();
             let mac_address;
 
-            api = 'http://' + host + ':' + port + '/api/';
+            if (!isBrowser) { api = 'http://' + host + ':' + port + '/api/'; }
 
             macaddress.one(function (err, mac) {
                 mac_address = mac;
@@ -1664,7 +1691,7 @@ if (auth == undefined) {
                     contentType: 'application/json',
                     success: function (response) {
 
-                        ipcRenderer.send('app-reload', '');
+                        appReload();
 
                     }, error: function (data) {
                         console.log(data);
@@ -1693,7 +1720,7 @@ if (auth == undefined) {
                 if ($.isNumeric(formData.till)) {
                     formData['app'] = $('#app').find('option:selected').text();
                     storage.set('settings', formData);
-                    ipcRenderer.send('app-reload', '');
+                    appReload();
                 }
                 else {
                     Swal.fire(
@@ -1749,7 +1776,7 @@ if (auth == undefined) {
                     success: function (data) {
 
                         if (ownUserEdit) {
-                            ipcRenderer.send('app-reload', '');
+                            appReload();
                         }
 
                         else {
@@ -1922,17 +1949,7 @@ if (auth == undefined) {
     });
 
     // ── Import CSV ───────────────────────────────────────────────────────────
-    $('#import_csv_btn').on('click', async function () {
-        const ipcRenderer = require('electron').ipcRenderer;
-        const fs = require('fs');
-        const result = await ipcRenderer.invoke('dialog:openFile', {
-            title: 'Import Products CSV',
-            filters: [{ name: 'CSV', extensions: ['csv'] }],
-            properties: ['openFile']
-        });
-        if (result.canceled || !result.filePaths.length) return;
-        const content = fs.readFileSync(result.filePaths[0], 'utf8');
-        (async function (text) {
+    async function _processCsvText(text) {
             // Strip UTF-8 BOM if present (Excel exports include it)
             var cleaned = text.replace(/^﻿/, '');
             var lines = cleaned.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
@@ -1999,7 +2016,34 @@ if (auth == undefined) {
                 title: 'Import Complete',
                 text: success + ' imported' + (errors > 0 ? ', ' + errors + ' failed' : '') + '.'
             });
-        })(content);
+    }
+
+    $('#import_csv_btn').on('click', async function () {
+        if (isBrowser) {
+            // Browser: use a hidden file input
+            var input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv,text/csv';
+            input.onchange = function () {
+                var file = input.files[0];
+                if (!file) return;
+                var reader = new FileReader();
+                reader.onload = function (e) { _processCsvText(e.target.result); };
+                reader.readAsText(file, 'utf-8');
+            };
+            input.click();
+        } else {
+            // Electron: native file dialog
+            const result = await ipcRenderer.invoke('dialog:openFile', {
+                title: 'Import Products CSV',
+                filters: [{ name: 'CSV', extensions: ['csv'] }],
+                properties: ['openFile']
+            });
+            if (result.canceled || !result.filePaths.length) return;
+            const fs = require('fs');
+            const content = fs.readFileSync(result.filePaths[0], 'utf8');
+            _processCsvText(content);
+        }
     });
 
 }
@@ -2447,7 +2491,7 @@ $('body').on("submit", "#account", function (e) {
                 if (data._id) {
                     storage.set('auth', { auth: true });
                     storage.set('user', data);
-                    ipcRenderer.send('app-reload', '');
+                    appReload();
                 }
                 else {
                     Swal.fire(
@@ -2477,7 +2521,7 @@ $('#quit').click(function () {
     }).then((result) => {
 
         if (result.value) {
-            ipcRenderer.send('app-quit', '');
+            if (!isBrowser) { ipcRenderer.send('app-quit', ''); } else { window.close(); }
         }
     });
 });
